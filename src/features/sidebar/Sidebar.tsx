@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export function Sidebar() {
   return (
-    <aside className="w-64 bg-gray-50 dark:bg-gray-800" aria-label="Sidebar">
+    <aside className="flex-none w-64 bg-gray-50 dark:bg-gray-800" aria-label="Sidebar">
       <div className="overflow-y-auto py-4 px-3">
         <ul className="space-y-2">
           <li>

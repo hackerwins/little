@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
-import { initDataset, fetchDataset } from './datasetAPI';
+import { fetchDataset } from './datasetAPI';
 import { Dataset } from '../../app/database';
 
 export interface DatasetState {
@@ -12,13 +12,6 @@ const initialState: DatasetState = {
   dataset: null,
   status: 'idle',
 };
-
-export const initDatasetAsync = createAsyncThunk(
-  'dataset/init',
-  async () => {
-    await initDataset();
-  }
-);
 
 export const fetchDatasetAsync = createAsyncThunk(
   'dataset/fetch',
