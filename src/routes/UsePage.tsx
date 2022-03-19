@@ -1,5 +1,5 @@
 import React from 'react';
 
-export function Use() {
+export function UsePage() {
   return <div>Use</div>;
 }

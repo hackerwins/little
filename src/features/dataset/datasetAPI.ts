@@ -1,12 +1,16 @@
 import { db, Dataset } from '../../app/database';
-import { testDataset } from './testDataset';
+
+const initialDataset = {
+  name: '',
+  labels: [],
+};
 
 // initDataset initializes the test dataset for testing.
 export function initDataset() {
   return new Promise<void>((resolve, reject) => {
     db.datasets.count().then((count) => {
       if (count === 0) {
-        db.datasets.put(testDataset).then(() => {
+        db.datasets.put(initialDataset).then(() => {
           resolve();
         }).catch((err) => {
           reject(err);
@@ -43,8 +47,14 @@ export function addImageToDataset(id: number, label: string, image: string) {
         for (const l of dataset.labels) {
           if (l.name === label) {
             l.images.push(image);
+            return;
           }
         }
+
+        dataset.labels.push({
+          name: label,
+          images: [image],
+        });
       });
     }).then(() => {
       resolve();

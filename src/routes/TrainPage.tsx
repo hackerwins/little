@@ -1,5 +1,5 @@
 import React from 'react';
 
-export function Train() {
+export function TrainPage() {
   return <div>Train</div>;
 }

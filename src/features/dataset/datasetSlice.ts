@@ -25,8 +25,7 @@ export const fetchDatasetAsync = createAsyncThunk(
 export const addImageToDatasetAsync = createAsyncThunk(
   'dataset/addImage',
   async ({datasetID, label, image}: {datasetID: number, label: string, image: string}) => {
-    const response = await addImageToDataset(datasetID, label, image);
-    return response;
+    return await addImageToDataset(datasetID, label, image);
   }
 );
 

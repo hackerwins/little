@@ -2,10 +2,10 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { Sidebar } from './components/sidebar/Sidebar';
-import { Label } from './routes/Label';
-import { Import } from './routes/Import';
-import { Train } from './routes/Train';
-import { Use } from './routes/Use';
+import { LabelPage } from './routes/LabelPage';
+import { CameraPage } from './routes/CameraPage';
+import { TrainPage } from './routes/TrainPage';
+import { UsePage } from './routes/UsePage';
 import './App.css';
 
 function App() {
@@ -15,10 +15,10 @@ function App() {
       <Sidebar />
       <main className="flex flex-col flex-grow">
           <Routes>
-            <Route path="/" element={<Label />} />
-            <Route path="/import" element={<Import />} />
-            <Route path="/train" element={<Train />} />
-            <Route path="/use" element={<Use />} />
+            <Route path="/" element={<LabelPage />} />
+            <Route path="/camera" element={<CameraPage />} />
+            <Route path="/train" element={<TrainPage />} />
+            <Route path="/use" element={<UsePage />} />
           </Routes>
       </main>
     </div>
