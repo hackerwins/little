@@ -23,19 +23,20 @@ export function Gallery() {
           &nbsp;Camera
         </Link>
       </div>
-      <section className="text-gray-700">
+      <section>
         {
           dataset?.labels.map((label, idx) => 
             <div key={idx} className="container mx-auto">
-              <div className="sticky top-0 flex mt-4 bg-white">
+              <div className="flex mt-4 bg-white">
                 <span className="h-auto py-2 text-lg text-left">{`${label.name} ${label.images.length}`}</span>
               </div>
               <ul className="flex flex-wrap">
                 {
                   label.images.map((image, index) => (
                     <li key={index} className="flex flex-wrap w-1/3">
-                      <div className="w-full p-1 md:p-2">
+                      <div className="relative w-full p-1 md:p-2">
                         <img alt="gallery" className="object-cover object-center w-full h-full rounded-lg" src={image} />
+                        <div className="absolute bottom-3 left-3 h-6 rounded p-1 text-xs text-white backdrop-blur-sm bg-white/30">{label.name}</div>
                       </div>
                     </li>
                   ))
