@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-import { Sidebar } from './features/sidebar/Sidebar';
+import { Sidebar } from './components/sidebar/Sidebar';
 import { Label } from './routes/Label';
 import { Import } from './routes/Import';
 import { Train } from './routes/Train';
