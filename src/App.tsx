@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import { Sidebar } from './components/sidebar/Sidebar';
 import { LabelPage } from './routes/LabelPage';
@@ -15,10 +15,11 @@ function App() {
       <Sidebar />
       <main className="flex flex-col flex-grow">
           <Routes>
-            <Route path="/" element={<LabelPage />} />
-            <Route path="/camera" element={<CameraPage />} />
+            <Route path="/label" element={<LabelPage />} />
+            <Route path="/label/camera" element={<CameraPage />} />
             <Route path="/train" element={<TrainPage />} />
             <Route path="/use" element={<UsePage />} />
+            <Route path="/" element={<Navigate to="/label" />} />
           </Routes>
       </main>
     </div>
