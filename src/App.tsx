@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import { Sidebar } from './components/sidebar/Sidebar';
+import { Sidebar } from './routes/Sidebar';
 import { LabelPage } from './routes/LabelPage';
 import { CameraPage } from './routes/CameraPage';
 import { TrainPage } from './routes/TrainPage';
@@ -15,11 +15,11 @@ function App() {
       <Sidebar />
       <main className="flex flex-col flex-grow">
           <Routes>
-            <Route path="/label" element={<LabelPage />} />
-            <Route path="/label/camera" element={<CameraPage />} />
+            <Route path="/labels" element={<LabelPage />} />
+            <Route path="/labels/camera" element={<CameraPage />} />
             <Route path="/train" element={<TrainPage />} />
             <Route path="/use" element={<UsePage />} />
-            <Route path="/" element={<Navigate to="/label" />} />
+            <Route path="/" element={<Navigate to="/labels" />} />
           </Routes>
       </main>
     </div>
