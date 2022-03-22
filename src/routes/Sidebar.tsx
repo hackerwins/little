@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Navigator } from '../components/navigator/Navigator';
 import { Summary as DatasetSummary } from '../features/dataset/Summary';
-import { Summary as TrainingSummary } from '../features/training/Summary';
+import { Summary as TrainingSummary } from '../features/model/Summary';
 
 export function Sidebar() {
 

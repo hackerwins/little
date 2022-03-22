@@ -6,7 +6,7 @@ const initialDataset = {
 };
 
 // initDataset initializes the test dataset for testing.
-export function initDataset() {
+export function initDataset(): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     db.datasets.count().then((count) => {
       if (count === 0) {
@@ -25,7 +25,7 @@ export function initDataset() {
 }
 
 // fetchDataset fetches a dataset from the database.
-export function fetchDataset(id: number) {
+export function fetchDataset(id: number): Promise<{ data: Dataset}> {
   return new Promise<{ data: Dataset }>((resolve, reject) => {
     initDataset().then(() => {
       return db.datasets.where('id').equals(id).first();
@@ -40,7 +40,11 @@ export function fetchDataset(id: number) {
 }
 
 // addImageToDataset adds an image to a dataset.
-export function addImageToDataset(id: number, label: string, image: string) {
+export function addImageToDataset(
+  id: number,
+  label: string,
+  image: string,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     initDataset().then(() => {
       return db.datasets.where('id').equals(id).modify((dataset) => {

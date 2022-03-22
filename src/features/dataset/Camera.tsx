@@ -4,6 +4,7 @@ import Webcam from 'react-webcam';
 
 import { useAppDispatch } from '../../app/hooks';
 import { addImageToDatasetAsync } from './datasetSlice';
+import { trainModelAsync } from '../model/modelSlice';
 import { LabelInput } from '../../components/label/LabelInput';
 
 // Camera component for taking pictures and adding them to the dataset.
@@ -20,7 +21,9 @@ export function Camera() {
         datasetID: 1,
         label,
         image: photo,
-      }));
+      })).then(() => {
+        dispatch(trainModelAsync(1));
+      });
     }
   }, [label, dispatch, webcamRef]);
 
