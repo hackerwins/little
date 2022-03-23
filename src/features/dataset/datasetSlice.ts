@@ -34,8 +34,7 @@ export const addImageToDatasetAsync = createAsyncThunk(
 export const datasetSlice = createSlice({
   name: 'dataset',
   initialState,
-  reducers: {
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchDatasetAsync.pending, (state, action) => {
