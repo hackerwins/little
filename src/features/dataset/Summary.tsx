@@ -27,7 +27,7 @@ export function Summary() {
         dataset?.labels.map((label, idx) => (
           <li key={idx}>
             <Link to={`/labels/${label.name}`} type="button" className={itemStyle}>
-              <span className="flex-1 whitespace-nowrap">{label.name || 'Unlabeled'}</span>
+              <span className="flex-1 whitespace-nowrap">{label.name}</span>
               <span className="inline-flex justify-center items-center p-3 ml-3 w-3 h-3 text-sm font-medium">{label.images.length}</span>
             </Link>
           </li>

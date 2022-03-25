@@ -19,11 +19,12 @@ const initialState: ModelState = {
 
 // isTrainable returns true if the dataset is trainable.
 function isTrainable(dataset: Dataset) {
-  if (dataset.labels.length < 2) {
+  const preparedLabels = dataset.labels.filter(label => label.name !== 'Unlabeled');
+  if (preparedLabels.length < 2) {
     return false;
   }
 
-  for (const label of dataset.labels) {
+  for (const label of preparedLabels) {
     if (label.images.length < 5) {
       return false;
     }

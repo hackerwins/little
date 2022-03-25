@@ -24,7 +24,7 @@ export function Camera() {
     if (photo) {
       await dispatch(addImageToDatasetAsync({
         datasetID: 1,
-        label,
+        label: label || 'Unlabeled',
         image: photo,
       }))
 

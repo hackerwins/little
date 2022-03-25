@@ -16,6 +16,7 @@ function App() {
       <main className="flex flex-col flex-grow">
           <Routes>
             <Route path="/labels" element={<LabelPage />} />
+            <Route path="/labels/:label" element={<LabelPage />} />
             <Route path="/labels/camera" element={<CameraPage />} />
             <Route path="/training" element={<TrainPage />} />
             <Route path="/use" element={<UsePage />} />

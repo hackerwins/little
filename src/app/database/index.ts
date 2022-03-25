@@ -23,7 +23,10 @@ export const db = new MalteseDB();
 // initialDataset is the initial data of dataset.
 const initialDataset = {
   name: '',
-  labels: [],
+  labels: [{
+    name: 'Unlabeled',
+    images: [],
+  }],
 };
 
 // initDataset initializes the test dataset.

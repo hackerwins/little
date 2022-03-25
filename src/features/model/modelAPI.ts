@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { putModel, Dataset, Model as ModelInfo } from '../../app/database';
+import { putModel, Dataset, Model as ModelInfo, filterLabels } from '../../app/database';
 
 // createImage creates a HTMLImageElement from a given base64 string.
 function createImage(encodedImage: string): Promise<HTMLImageElement> {
@@ -39,7 +39,7 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
     'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
   );
   console.log('baseModel loaded');
-  const labels = dataset.labels.filter((label) => !!label.name);
+  const labels = filterLabels(dataset.labels);
 
   const pooling = baseModel.getLayer('global_average_pooling2d_1');
   const predictions = tf.layers.dense({
