@@ -1,7 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
-import { v4 as uuidv4 } from 'uuid';
 
-import { putModel, Dataset, Model as ModelInfo, filterLabels } from '../../app/database';
+import { putModel, Dataset, filterLabels } from '../../app/database';
 
 // createImage creates a HTMLImageElement from a given base64 string.
 function createImage(encodedImage: string): Promise<HTMLImageElement> {
@@ -25,12 +24,13 @@ async function toTensor(encodedImage: string): Promise<tf.Tensor> {
 export async function predict(
   encodedImage: string,
   model: tf.LayersModel,
-  modelInfo: ModelInfo,
-): Promise<void> {
+): Promise<Array<number>> {
   const tensor = await toTensor(encodedImage);
-  const resultTensor = model.predict(tf.stack([tensor])) as tf.Tensor;
-  const result = resultTensor.arraySync() as Array<Array<number>>;
-  console.log(result);
+  const x = tf.stack([tensor]);
+  const outputTensor = model.predictOnBatch(x) as tf.Tensor<tf.Rank>;
+  const results = outputTensor.arraySync() as Array<Array<number>>;
+  x.dispose();
+  return results[0];
 }
 
 // train creates a model and trains it on the given dataset.
@@ -100,11 +100,12 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
 
 // saveModel saves a given model to the database.
 export async function saveModel(
+  projectID: number,
   model: tf.LayersModel,
   history: tf.History,
   dataset: Dataset,
 ): Promise<void> {
-  const indexedDBKey = `indexeddb://maltiese-models-${uuidv4()}`;
+  const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
   const labelNames = dataset.labels.filter((label) => !!label.name).map(label => label.name);
 
   await model.save(indexedDBKey);

@@ -1,5 +1,10 @@
 import React from 'react';
+import { Camera } from '../features/model/Camera';
 
 export function UsePage() {
-  return <div>Use</div>;
+  return (
+    <div className="pt-6 px-12 py-6 h-screen overflow-y-scroll">
+      <Camera />
+    </div>
+  );
 }

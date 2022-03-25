@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 
 import { Dataset, fetchDataset } from '../../app/database';
 import { RootState } from '../../app/store';
-import { train, saveModel } from './modelAPI';
+import { train, predict, saveModel } from './modelAPI';
 
 export interface ModelState {
   model: tf.LayersModel | null;
@@ -36,9 +36,8 @@ function isTrainable(dataset: Dataset) {
 // trainModelAsync creates a new model and trains it.
 export const trainModelAsync = createAsyncThunk(
   'model/train',
-  async (datasetID: number) => {
-    console.log(datasetID);
-    const response = await fetchDataset(datasetID);
+  async (projectID: number) => {
+    const response = await fetchDataset(projectID);
     const dataset = response.data;
 
     if (!isTrainable(dataset)) {
@@ -46,8 +45,18 @@ export const trainModelAsync = createAsyncThunk(
     }
 
     const [model, history] = await train(dataset);
-    await saveModel(model, history, dataset);
+    await saveModel(projectID, model, history, dataset);
     return { model, history };
+  },
+);
+
+export const predictAsync = createAsyncThunk(
+  'model/predict',
+  async (image: string, {getState}) => {
+    const state = getState() as RootState ;
+    const model = state.model.model!;
+    const probabilities = await predict(image, model);
+    console.log(probabilities);
   },
 );
 
