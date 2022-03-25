@@ -110,7 +110,7 @@ export async function saveModel(
   await model.save(indexedDBKey);
 
   await putModel({
-    datasetID: dataset.id!,
+    projectID: dataset.projectID!,
     labelNames,
     indexedDBKey,
   });

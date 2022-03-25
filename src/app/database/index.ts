@@ -11,8 +11,8 @@ class MalteseDB extends Dexie {
     super('malteseDB');
 
     this.version(1).stores({
-      datasets: '++id',
-      models: '++id',
+      datasets: 'projectID',
+      models: 'projectID',
     });
   }
 }
@@ -20,27 +20,24 @@ class MalteseDB extends Dexie {
 export * from './types';
 export const db = new MalteseDB();
 
-// initialDataset is the initial data of dataset.
-const initialDataset = {
-  name: '',
-  labels: [{
-    name: 'Unlabeled',
-    images: [],
-  }],
-};
-
-// initDataset initializes the test dataset.
-async function initDataset(): Promise<void> {
-  const count = await db.datasets.count();
-  if (count === 0) {
-    await db.datasets.put(initialDataset);
+// initDataset initializes the dataset for the given project.
+async function initDataset(projectID: number): Promise<void> {
+  const dataset = await db.datasets.where('projectID').equals(projectID).first();
+  if (!dataset) {
+    await db.datasets.put({
+      projectID,
+      labels: [{
+        name: 'Unlabeled',
+        images: [],
+      }],
+    });
   }
 }
 
 // fetchDataset fetches a dataset from the database.
-export async function fetchDataset(id: number): Promise<{ data: Dataset}> {
-  await initDataset();
-  const dataset = await db.datasets.where('id').equals(id).first();
+export async function fetchDataset(projectID: number): Promise<{ data: Dataset}> {
+  await initDataset(projectID);
+  const dataset = await db.datasets.where('projectID').equals(projectID).first();
   if (dataset) {
     return { data: dataset };
   }
@@ -54,8 +51,7 @@ export async function addImageToDataset(
   label: string,
   image: string,
 ): Promise<void> {
-  await initDataset();
-  await db.datasets.where('id').equals(id).modify((dataset) => {
+  await db.datasets.where('projectID').equals(id).modify((dataset) => {
     for (const l of dataset.labels) {
       if (l.name === label) {
         l.images.push(image);

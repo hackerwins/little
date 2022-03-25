@@ -1,3 +1,9 @@
+// Project is the unit of work for labelling dataset and training models.
+export type Project = {
+  id: number;
+  name: string;
+}
+
 // Label is the unit of data that has images and its name.
 export type Label = {
   name: string;
@@ -6,7 +12,7 @@ export type Label = {
 
 // Dataset is a collection of labels
 export type Dataset = {
-  id?: number;
+  projectID: number;
   labels: Array<Label>;
 };
 
@@ -16,8 +22,7 @@ export function filterLabels(labels: Array<Label>): Array<Label> {
 }
 
 export type Model = {
-  id?: number;
-  datasetID: number;
+  projectID: number;
   labelNames: Array<string>;
   history?: Array<{
     epoch: number;

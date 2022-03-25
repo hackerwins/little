@@ -11,7 +11,8 @@ export function Gallery({label}: {label?: string}) {
   const labels = dataset?.labels || [];
 
   const title = label ? `${label}` : 'All Images';
-  const filteredLabels = label ? labels.filter(l => l.name === label) : labels;
+  const selectedLabels = label ? labels.filter(l => l.name === label) : labels;
+  const filteredLabels = selectedLabels.filter(l => l.images.length);
 
   return (
     <>
