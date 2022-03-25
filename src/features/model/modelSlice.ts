@@ -1,9 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as tf from '@tensorflow/tfjs';
 
-import { Dataset } from '../../app/database';
+import { Dataset, fetchDataset } from '../../app/database';
 import { RootState } from '../../app/store';
-import { fetchDataset } from '../dataset/datasetAPI';
 import { train, saveModel } from './modelAPI';
 
 export interface ModelState {
@@ -33,21 +32,22 @@ function isTrainable(dataset: Dataset) {
   return true;
 }
 
+// trainModelAsync creates a new model and trains it.
 export const trainModelAsync = createAsyncThunk(
   'model/train',
   async (datasetID: number) => {
+    console.log(datasetID);
     const response = await fetchDataset(datasetID);
     const dataset = response.data;
 
     if (!isTrainable(dataset)) {
-      console.log('Dataset is not trainable');
       throw new Error('Dataset is not trainable');
     }
 
     const [model, history] = await train(dataset);
     await saveModel(model, history, dataset);
     return { model, history };
-  }
+  },
 );
 
 export const modelSlice = createSlice({
@@ -60,14 +60,22 @@ export const modelSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(trainModelAsync.fulfilled, (state, action) => {
+        if (!action.payload) {
+          return;
+        }
+
         const { model, history } = action.payload;
         state.status = 'idle';
         state.model = model;
         state.history = history;
+      })
+      .addCase(trainModelAsync.rejected, (state) => {
+        state.status = 'failed';
       });
   },
 });
 
 export const selectHistory = (state: RootState) => state.model?.history;
+export const selectStatus = (state: RootState) => state.model?.status;
 
 export default modelSlice.reducer;

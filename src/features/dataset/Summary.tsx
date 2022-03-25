@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAppSelector } from '../../app/hooks';
-import { selectDataset } from './datasetSlice';
+import { useAppSelector, useAppDispatch } from '../../app/hooks';
+import { selectDataset, fetchDatasetAsync } from './datasetSlice';
 
 export function Summary() {
   const dataset = useAppSelector(selectDataset);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchDatasetAsync(1));
+  }, [dispatch]);
 
   const total = dataset?.labels.reduce((acc, label) => acc + label.images.length, 0);
   const itemStyle = 'flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group';

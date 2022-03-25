@@ -1,12 +1,33 @@
-import { db, Dataset } from '../../app/database';
+import Dexie, { Table } from 'dexie';
 
+import { Dataset, Model } from './types';
+
+// MalteseDB is a Dexie database that stores the data for Maltese.
+class MalteseDB extends Dexie {
+  datasets!: Table<Dataset>;
+  models!: Table<Model>;
+
+  constructor() {
+    super('malteseDB');
+
+    this.version(1).stores({
+      datasets: '++id',
+      models: '++id',
+    });
+  }
+}
+
+export * from './types';
+export const db = new MalteseDB();
+
+// initialDataset is the initial data of dataset.
 const initialDataset = {
   name: '',
   labels: [],
 };
 
-// initDataset initializes the test dataset for testing.
-export async function initDataset(): Promise<void> {
+// initDataset initializes the test dataset.
+async function initDataset(): Promise<void> {
   const count = await db.datasets.count();
   if (count === 0) {
     await db.datasets.put(initialDataset);
@@ -45,3 +66,9 @@ export async function addImageToDataset(
     });
   });
 }
+
+// putModel upserts the given model in the database.
+export async function putModel(model: Model): Promise<void> {
+  await db.models.put(model);
+}
+

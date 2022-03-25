@@ -1,8 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { RootState } from '../../app/store';
-import { Dataset } from '../../app/database';
-import { fetchDataset, addImageToDataset } from './datasetAPI';
+import { Dataset, fetchDataset, addImageToDataset } from '../../app/database';
 
 export interface DatasetState {
   dataset: Dataset | null;

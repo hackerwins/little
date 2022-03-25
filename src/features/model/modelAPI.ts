@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { v4 as uuidv4 } from 'uuid';
 
-import { db, Dataset, Model as ModelInfo } from '../../app/database';
+import { putModel, Dataset, Model as ModelInfo } from '../../app/database';
 
 // createImage creates a HTMLImageElement from a given base64 string.
 function createImage(encodedImage: string): Promise<HTMLImageElement> {
@@ -91,7 +91,9 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
       },
     },
   });
+
   xs.dispose();
+  xy.dispose();
 
   return [model, history];
 }
@@ -107,7 +109,7 @@ export async function saveModel(
 
   await model.save(indexedDBKey);
 
-  await db.models.put({
+  await putModel({
     datasetID: dataset.id!,
     labelNames,
     indexedDBKey,

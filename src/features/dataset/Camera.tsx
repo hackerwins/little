@@ -1,11 +1,12 @@
 import React, { useRef, useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Webcam from 'react-webcam';
+import debounce from 'lodash/debounce';
 
 import { useAppDispatch } from '../../app/hooks';
 import { addImageToDatasetAsync } from './datasetSlice';
 import { trainModelAsync } from '../model/modelSlice';
-import { LabelInput } from '../../components/label/LabelInput';
+import { LabelInput } from '../../common/label/LabelInput';
 
 // Camera component for taking pictures and adding them to the dataset.
 export function Camera() {
@@ -13,19 +14,23 @@ export function Camera() {
   const dispatch = useAppDispatch();
   const [label, setLabel] = useState('');
 
+  const debounceTrain = useCallback(debounce(async () => {
+    await dispatch(trainModelAsync(1));
+  }, 5000), [dispatch]);
+
   // TODO(hackerwins): Add sound effects for when taking a photo.
-  const takePhoto = useCallback(() => {
+  const takePhoto = useCallback(async () => {
     const photo = webcamRef.current?.getScreenshot();
     if (photo) {
-      dispatch(addImageToDatasetAsync({
+      await dispatch(addImageToDatasetAsync({
         datasetID: 1,
         label,
         image: photo,
-      })).then(() => {
-        dispatch(trainModelAsync(1));
-      });
+      }))
+
+      debounceTrain();
     }
-  }, [label, dispatch, webcamRef]);
+  }, [label, dispatch, webcamRef, debounceTrain]);
 
   return (
     <>

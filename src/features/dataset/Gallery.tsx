@@ -1,18 +1,13 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { useAppSelector, useAppDispatch } from '../../app/hooks';
-import { selectDataset, fetchDatasetAsync } from './datasetSlice';
-import { LabelInput } from '../../components/label/LabelInput';
+import { useAppSelector } from '../../app/hooks';
+import { selectDataset } from './datasetSlice';
+import { LabelInput } from '../../common/label/LabelInput';
 
 // Gallery component displays a list of images of a dataset.
 export function Gallery() {
   const dataset = useAppSelector(selectDataset);
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    dispatch(fetchDatasetAsync(1));
-  }, [dispatch]);
 
   return (
     <>
