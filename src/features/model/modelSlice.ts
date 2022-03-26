@@ -43,9 +43,11 @@ export const trainModelAsync = createAsyncThunk(
       throw new Error('Dataset is not trainable');
     }
 
+    // TODO(hackerwins): off load below to a web worker.
     const [model, info] = await train(dataset);
     const indexedDBKey = await saveModel(projectID, model, dataset);
 
+    // convert training info to history.
     const history: Array<TrainingLog> = [];
     let idx = 0;
     for (const a of info.history.acc) {
@@ -88,8 +90,7 @@ export const predictAsync = createAsyncThunk(
   async (image: string, {getState}) => {
     const state = getState() as RootState ;
     const model = state.model.model!;
-    const probabilities = await predict(image, model);
-    console.log(probabilities);
+    return await predict(image, model);
   },
 );
 

@@ -27,9 +27,10 @@ export async function predict(
 ): Promise<Array<number>> {
   const tensor = await toTensor(encodedImage);
   const x = tf.stack([tensor]);
-  const outputTensor = model.predictOnBatch(x) as tf.Tensor<tf.Rank>;
-  const results = outputTensor.arraySync() as Array<Array<number>>;
+  const yhat = model.predictOnBatch(x) as tf.Tensor<tf.Rank>;
+  const results = yhat.arraySync() as Array<Array<number>>;
   x.dispose();
+  yhat.dispose();
   return results[0];
 }
 
