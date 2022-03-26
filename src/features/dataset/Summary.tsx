@@ -13,6 +13,7 @@ export function Summary() {
   }, [dispatch]);
 
   const total = dataset?.labels.reduce((acc, label) => acc + label.images.length, 0);
+  const labels = dataset?.labels.filter(label => label.images.length) || [];
   const itemStyle = 'flex items-center p-2 text-base font-normal text-gray-900 rounded-lg transition duration-75 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group';
 
   return (
@@ -24,7 +25,7 @@ export function Summary() {
         </Link>
       </li>
       {
-        dataset?.labels.map((label, idx) => (
+        labels.map((label, idx) => (
           <li key={idx}>
             <Link to={`/labels/${label.name}`} type="button" className={itemStyle}>
               <span className="flex-1 whitespace-nowrap">{label.name}</span>

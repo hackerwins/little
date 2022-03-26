@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
-import { useAppSelector } from '../../app/hooks';
-import { selectHistory } from './modelSlice';
+import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { selectHistory, loadModelAsync } from './modelSlice';
 
 export function Summary() {
   const history = useAppSelector(selectHistory);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(loadModelAsync(1));
+  }, [dispatch]);
+
   if (!history) {
     return (
       <div className="p-4 mt-6 bg-gray-50 rounded dark:bg-gray-900" role="alert">
@@ -15,8 +21,7 @@ export function Summary() {
     );
   }
 
-  const accuracies = history.history.acc as Array<number>;
-  const correct = accuracies[accuracies.length - 1] * 100;
+  const correct = history[history.length - 1].accuracy * 100;
   const incorrect = 100 - correct;
 
   return (

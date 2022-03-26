@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { RootState } from '../../app/store';
-import { Dataset, fetchDataset, addImageToDataset } from '../../app/database';
+import { Dataset, findDataset, addImageToDataset } from '../../app/database';
 
 export interface DatasetState {
   dataset: Dataset | null;
@@ -16,7 +16,7 @@ const initialState: DatasetState = {
 export const fetchDatasetAsync = createAsyncThunk(
   'dataset/fetch',
   async (datasetID: number) => {
-    const response = await fetchDataset(datasetID);
+    const response = await findDataset(datasetID);
     return response.data;
   }
 );
@@ -25,7 +25,7 @@ export const addImageToDatasetAsync = createAsyncThunk(
   'dataset/addImage',
   async ({datasetID, label, image}: {datasetID: number, label: string, image: string}) => {
     await addImageToDataset(datasetID, label, image);
-    const response = await fetchDataset(datasetID);
+    const response = await findDataset(datasetID);
     return response.data;
   }
 );

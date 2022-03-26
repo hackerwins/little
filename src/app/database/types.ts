@@ -21,14 +21,18 @@ export function filterLabels(labels: Array<Label>): Array<Label> {
   return labels.filter(label => label.name !== 'Unlabeled');
 }
 
+// TrainingLog is the log of training process.
+export type TrainingLog = {
+  epoch: number;
+  loss: number;
+  accuracy: number;
+}
+
+// Model is the metadata of a trained model.
 export type Model = {
   projectID: number;
   labelNames: Array<string>;
-  history?: Array<{
-    epoch: number;
-    loss: number;
-    accuracy: number;
-  }>;
+  history?: Array<TrainingLog>;
   indexedDBKey: string;
 }
 

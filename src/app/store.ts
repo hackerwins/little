@@ -9,11 +9,11 @@ export const store = configureStore({
   },
   middleware: getDefaultMiddleware({
     serializableCheck: {
-      ignoredActions: ['model/train/fulfilled'],
-      ignoredPaths: ['model.model', 'model.history'],
+      ignoredActions: ['model/train/fulfilled', 'model/load/fulfilled'],
+      ignoredPaths: ['model.model'],
     },
     immutableCheck: {
-      ignoredPaths: ['model.model', 'model.history'],
+      ignoredPaths: ['model.model'],
     },
   }),
 });

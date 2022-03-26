@@ -1,13 +1,13 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as tf from '@tensorflow/tfjs';
 
-import { Dataset, fetchDataset } from '../../app/database';
+import { Dataset, TrainingLog, findDataset, findModel, putModel } from '../../app/database';
 import { RootState } from '../../app/store';
-import { train, predict, saveModel } from './modelAPI';
+import { train, predict, saveModel, loadModel } from './modelAPI';
 
 export interface ModelState {
   model: tf.LayersModel | null;
-  history: tf.History | null;
+  history: Array<TrainingLog> | null;
   status: 'idle' | 'loading' | 'failed';
 }
 
@@ -37,19 +37,52 @@ function isTrainable(dataset: Dataset) {
 export const trainModelAsync = createAsyncThunk(
   'model/train',
   async (projectID: number) => {
-    const response = await fetchDataset(projectID);
+    const response = await findDataset(projectID);
     const dataset = response.data;
-
     if (!isTrainable(dataset)) {
       throw new Error('Dataset is not trainable');
     }
 
-    const [model, history] = await train(dataset);
-    await saveModel(projectID, model, history, dataset);
+    const [model, info] = await train(dataset);
+    const indexedDBKey = await saveModel(projectID, model, dataset);
+
+    const history: Array<TrainingLog> = [];
+    let idx = 0;
+    for (const a of info.history.acc) {
+      history.push({
+        epoch: idx,
+        accuracy: a as number,
+        loss: info.history.loss[idx] as number,
+      });
+      idx += 1;
+    }
+    const labelNames = dataset.labels.filter(
+      (label) => !!label.name
+    ).map(label => label.name);
+
+    await putModel({
+      projectID: dataset.projectID!,
+      labelNames,
+      history,
+      indexedDBKey,
+    });
+
     return { model, history };
   },
 );
 
+// loadModelAsync loads a model from the database.
+export const loadModelAsync = createAsyncThunk(
+  'model/load',
+  async (projectID: number) => {
+    const response = await findModel(projectID);
+    const modelInfo = response.data;
+    const model = await loadModel(projectID);
+    return { model, history: modelInfo.history! };
+  },
+);
+
+// predictAsync predicts a single image.
 export const predictAsync = createAsyncThunk(
   'model/predict',
   async (image: string, {getState}) => {
@@ -81,6 +114,16 @@ export const modelSlice = createSlice({
       })
       .addCase(trainModelAsync.rejected, (state) => {
         state.status = 'failed';
+      })
+      .addCase(loadModelAsync.fulfilled, (state, action) => {
+        if (!action.payload) {
+          return;
+        }
+
+        const { model, history } = action.payload;
+        state.status = 'idle';
+        state.model = model;
+        state.history = history;
       });
   },
 });

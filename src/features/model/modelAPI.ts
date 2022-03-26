@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 
-import { putModel, Dataset, filterLabels } from '../../app/database';
+import { Dataset, filterLabels } from '../../app/database';
 
 // createImage creates a HTMLImageElement from a given base64 string.
 function createImage(encodedImage: string): Promise<HTMLImageElement> {
@@ -38,7 +38,6 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
   const baseModel = await tf.loadLayersModel(
     'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
   );
-  console.log('baseModel loaded');
   const labels = filterLabels(dataset.labels);
 
   const pooling = baseModel.getLayer('global_average_pooling2d_1');
@@ -83,7 +82,7 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
   const xs = tf.stack(tensors);
   const xy = tf.oneHot(targets, labels.length);
 
-  const history = await model.fit(xs, xy, {
+  const info = await model.fit(xs, xy, {
     epochs: 15,
     callbacks: {
       onEpochEnd: (epoch: number, logs?: tf.Logs) => {
@@ -95,25 +94,25 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
   xs.dispose();
   xy.dispose();
 
-  return [model, history];
+  return [model, info];
 }
 
 // saveModel saves a given model to the database.
 export async function saveModel(
   projectID: number,
   model: tf.LayersModel,
-  history: tf.History,
   dataset: Dataset,
-): Promise<void> {
+): Promise<string> {
   const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
-  const labelNames = dataset.labels.filter((label) => !!label.name).map(label => label.name);
-
   await model.save(indexedDBKey);
+  return indexedDBKey;
+}
 
-  await putModel({
-    projectID: dataset.projectID!,
-    labelNames,
-    indexedDBKey,
-  });
+// loadModel loads a model of the given project from the database.
+export async function loadModel(
+  projectID: number,
+): Promise<tf.LayersModel> {
+  const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
+  return await tf.loadLayersModel(indexedDBKey);
 }
 

@@ -34,8 +34,8 @@ async function initDataset(projectID: number): Promise<void> {
   }
 }
 
-// fetchDataset fetches a dataset from the database.
-export async function fetchDataset(projectID: number): Promise<{ data: Dataset}> {
+// findDataset returns the dataset from the database.
+export async function findDataset(projectID: number): Promise<{data: Dataset}> {
   await initDataset(projectID);
   const dataset = await db.datasets.where('projectID').equals(projectID).first();
   if (dataset) {
@@ -43,6 +43,16 @@ export async function fetchDataset(projectID: number): Promise<{ data: Dataset}>
   }
 
   throw new Error('Dataset not found');
+}
+
+// findModel returns the model from the database.
+export async function findModel(projectID: number): Promise<{data: Model}> {
+  const model = await db.models.where('projectID').equals(projectID).first();
+  if (model) {
+    return { data: model };
+  }
+
+  throw new Error('Model not found');
 }
 
 // addImageToDataset adds an image to a dataset.
