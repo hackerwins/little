@@ -7,7 +7,7 @@ export function LabelPage() {
   const { label } = useParams();
 
   return (
-    <div className="pt-6 px-12 py-6 h-screen overflow-y-auto">
+    <div className="pt-6 px-12 py-6">
       <Gallery label={label} />
     </div>
   );

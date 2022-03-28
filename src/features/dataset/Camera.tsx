@@ -1,18 +1,21 @@
-import React, { useRef, useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import debounce from 'lodash/debounce';
 
 import { useAppDispatch } from '../../app/hooks';
-import { addImageToDatasetAsync } from './datasetSlice';
 import { trainModelAsync } from '../model/modelSlice';
+import { addImageToDatasetAsync } from './datasetSlice';
 import { LabelInput } from '../../common/label/LabelInput';
 
 // Camera component for taking pictures and adding them to the dataset.
 export function Camera() {
-  const webcamRef = useRef<Webcam>(null);
   const dispatch = useAppDispatch();
-  const [label, setLabel] = useState('');
+  const { search } = useLocation();
+  const query = useMemo(() => new URLSearchParams(search), [search]);
+
+  const webcamRef = useRef<Webcam>(null);
+  const [label, setLabel] = useState(query.get('label') || '');
 
   const debounceTrain = useCallback(debounce(async () => {
     await dispatch(trainModelAsync(1));
