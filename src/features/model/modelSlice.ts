@@ -37,39 +37,44 @@ function isTrainable(dataset: Dataset) {
 export const trainModelAsync = createAsyncThunk(
   'model/train',
   async (projectID: number) => {
-    const response = await findDataset(projectID);
-    const dataset = response.data;
-    if (!isTrainable(dataset)) {
-      throw new Error('Dataset is not trainable');
-    }
+    try {
+      const response = await findDataset(projectID);
+      const dataset = response.data;
+      if (!isTrainable(dataset)) {
+        throw new Error('Dataset is not trainable');
+      }
 
-    // TODO(hackerwins): off load below to a web worker.
-    const [model, info] = await train(dataset);
-    const indexedDBKey = await saveModel(projectID, model, dataset);
+      // TODO(hackerwins): off load below to a web worker.
+      const [model, info] = await train(dataset);
+      const indexedDBKey = await saveModel(projectID, model, dataset);
 
-    // convert training info to history.
-    const history: Array<TrainingLog> = [];
-    let idx = 0;
-    for (const a of info.history.acc) {
-      history.push({
-        epoch: idx,
-        accuracy: a as number,
-        loss: info.history.loss[idx] as number,
+      // convert training info to history.
+      const history: Array<TrainingLog> = [];
+      let idx = 0;
+      for (const a of info.history.acc) {
+        history.push({
+          epoch: idx,
+          accuracy: a as number,
+          loss: info.history.loss[idx] as number,
+        });
+        idx += 1;
+      }
+      const labelNames = dataset.labels.filter(
+        (label) => !!label.name
+      ).map(label => label.name);
+
+      await putModel({
+        projectID: dataset.projectID!,
+        labelNames,
+        history,
+        indexedDBKey,
       });
-      idx += 1;
+
+      return { model, history };
+    } catch (e) {
+      console.error(e);
+      throw e;
     }
-    const labelNames = dataset.labels.filter(
-      (label) => !!label.name
-    ).map(label => label.name);
-
-    await putModel({
-      projectID: dataset.projectID!,
-      labelNames,
-      history,
-      indexedDBKey,
-    });
-
-    return { model, history };
   },
 );
 
@@ -110,6 +115,9 @@ export const modelSlice = createSlice({
 
         const { model, history } = action.payload;
         state.status = 'idle';
+        if (state.model) {
+          state.model.dispose();
+        }
         state.model = model;
         state.history = history;
       })
