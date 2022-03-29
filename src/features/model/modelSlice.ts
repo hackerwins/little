@@ -1,19 +1,24 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as tf from '@tensorflow/tfjs';
 
-import { Dataset, TrainingLog, findDataset, findModel, putModel } from '../../app/database';
+import {
+  Dataset, TrainingLog, Prediction, LabelPrediction,
+  Model as ModelInfo,
+  findDataset, findModel, putModel,
+  filterLabels,
+} from '../../app/database';
 import { RootState } from '../../app/store';
 import { train, predict, saveModel, loadModel } from './modelAPI';
 
 export interface ModelState {
   model: tf.LayersModel | null;
-  history: Array<TrainingLog> | null;
+  modelInfo: ModelInfo | null;
   status: 'idle' | 'loading' | 'failed';
 }
 
 const initialState: ModelState = {
   model: null,
-  history: null,
+  modelInfo: null,
   status: 'idle',
 };
 
@@ -44,11 +49,11 @@ export const trainModelAsync = createAsyncThunk(
         throw new Error('Dataset is not trainable');
       }
 
-      // TODO(hackerwins): off load below to a web worker.
+      // 01. train model and save it to the database.
       const [model, info] = await train(dataset);
       const indexedDBKey = await saveModel(projectID, model, dataset);
 
-      // convert training info to history.
+      // 02. convert tf.info to history.
       const history: Array<TrainingLog> = [];
       let idx = 0;
       for (const a of info.history.acc) {
@@ -59,18 +64,36 @@ export const trainModelAsync = createAsyncThunk(
         });
         idx += 1;
       }
-      const labelNames = dataset.labels.filter(
-        (label) => !!label.name
-      ).map(label => label.name);
+      const labelNames = filterLabels(dataset.labels).map(label => label.name);
 
-      await putModel({
+      // 03. build prediction.
+      const prediction: Prediction = {
+        projectID: dataset.projectID!,
+        labels: [],
+      };
+      for (const label of dataset.labels) {
+        const labelPrediction: LabelPrediction = {
+          label: label.name,
+          images: [],
+        };
+        for (const image of label.images) {
+          const result = await predict(image.src, model);
+          labelPrediction.images.push({
+            scores: result,
+          });
+        }
+        prediction.labels.push(labelPrediction);
+      }
+
+      const modelInfo = {
         projectID: dataset.projectID!,
         labelNames,
         history,
         indexedDBKey,
-      });
-
-      return { model, history };
+        prediction,
+      };
+      await putModel(modelInfo);
+      return { model, modelInfo };
     } catch (e) {
       console.error(e);
       throw e;
@@ -85,7 +108,7 @@ export const loadModelAsync = createAsyncThunk(
     const response = await findModel(projectID);
     const modelInfo = response.data;
     const model = await loadModel(projectID);
-    return { model, history: modelInfo.history! };
+    return { model, modelInfo };
   },
 );
 
@@ -113,13 +136,13 @@ export const modelSlice = createSlice({
           return;
         }
 
-        const { model, history } = action.payload;
+        const { model, modelInfo } = action.payload;
         state.status = 'idle';
         if (state.model) {
           state.model.dispose();
         }
         state.model = model;
-        state.history = history;
+        state.modelInfo = modelInfo;
       })
       .addCase(trainModelAsync.rejected, (state) => {
         state.status = 'failed';
@@ -129,15 +152,15 @@ export const modelSlice = createSlice({
           return;
         }
 
-        const { model, history } = action.payload;
+        const { model, modelInfo } = action.payload;
         state.status = 'idle';
         state.model = model;
-        state.history = history;
+        state.modelInfo = modelInfo;
       });
   },
 });
 
-export const selectHistory = (state: RootState) => state.model?.history;
+export const selectModelInfo = (state: RootState) => state.model?.modelInfo;
 export const selectStatus = (state: RootState) => state.model?.status;
 
 export default modelSlice.reducer;

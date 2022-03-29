@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { selectHistory, loadModelAsync } from './modelSlice';
+import { selectModelInfo, loadModelAsync } from './modelSlice';
 
 export function Summary() {
-  const history = useAppSelector(selectHistory);
+  const modelInfo = useAppSelector(selectModelInfo);
   const dispatch = useAppDispatch();
 
   useEffect(() => {
     dispatch(loadModelAsync(1));
   }, [dispatch]);
 
-  if (!history) {
+  if (!modelInfo) {
     return (
       <div className="p-4 mt-6 bg-gray-50 rounded dark:bg-gray-900" role="alert">
         <p className="mb-3 text-lg text-gray-900 dark:text-gray-400">
@@ -21,7 +21,7 @@ export function Summary() {
     );
   }
 
-  const correct = history[history.length - 1].accuracy * 100;
+  const correct = modelInfo.history[modelInfo.history.length - 1].accuracy * 100;
   const incorrect = 100 - correct;
 
   return (

@@ -4,10 +4,16 @@ export type Project = {
   name: string;
 }
 
+// Image is a single image in a dataset.
+export type Image = {
+  src: string;
+  createdAt: number;
+}
+
 // Label is the unit of data that has images and its name.
 export type Label = {
   name: string;
-  images: Array<string>;
+  images: Array<Image>;
 };
 
 // Dataset is a collection of labels
@@ -15,6 +21,20 @@ export type Dataset = {
   projectID: number;
   labels: Array<Label>;
 };
+
+export type ImagePrediction = {
+  scores: Array<number>;
+}
+
+export type LabelPrediction = {
+  label: string;
+  images: Array<ImagePrediction>;
+};
+
+export type Prediction = {
+  projectID: number;
+  labels: Array<LabelPrediction>;
+}
 
 // filterLabels returns a label array without unlabeled label.
 export function filterLabels(labels: Array<Label>): Array<Label> {
@@ -32,7 +52,8 @@ export type TrainingLog = {
 export type Model = {
   projectID: number;
   labelNames: Array<string>;
-  history?: Array<TrainingLog>;
+  history: Array<TrainingLog>;
   indexedDBKey: string;
+  prediction: Prediction;
 }
 

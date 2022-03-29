@@ -5,12 +5,12 @@ import { filterLabels } from '../../app/database';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { LabelInput } from '../../common/label/LabelInput';
 import { selectDataset } from '../dataset/datasetSlice';
-import { selectHistory, predictAsync } from './modelSlice';
+import { selectModelInfo, predictAsync } from './modelSlice';
 
 // Camera is a component that allows the user to predict label from webcam.
 export function Camera() {
   const dataset = useAppSelector(selectDataset);
-  const history = useAppSelector(selectHistory);
+  const modelInfo = useAppSelector(selectModelInfo);
   const dispatch = useAppDispatch();
   const labels = filterLabels(dataset?.labels || []);
 
@@ -18,7 +18,7 @@ export function Camera() {
   const [label, setLabel] = useState('');
 
   useEffect(() => {
-    if (!webcamRef.current || !history || !labels.length) {
+    if (!webcamRef.current || !modelInfo || !labels.length) {
       return;
     }
 
@@ -27,19 +27,18 @@ export function Camera() {
       const image = webcamRef.current!.getScreenshot()!;
       if (image) {
         const result = await dispatch(predictAsync(image));
-        const confidenceList = result.payload as Array<number>;
+        const scores = result.payload as Array<number>;
 
         const prediction = new Map<string, number>();
         let maxKey = '';
-        let maxConfidence = 0;
-        confidenceList.forEach((confidence: number, idx: number) => {
-          if (confidence > maxConfidence) {
-            maxConfidence = confidence;
+        let maxScore = 0;
+        scores.forEach((score: number, idx: number) => {
+          if (score > maxScore) {
+            maxScore = score;
             maxKey = labels[idx].name;
           }
-          prediction.set(labels[idx].name, confidence);
+          prediction.set(labels[idx].name, score);
         });
-
         console.log(prediction);
         setLabel(maxKey);
       }
@@ -52,7 +51,7 @@ export function Camera() {
         clearTimeout(timer);
       }
     };
-  }, [webcamRef, dispatch, history, labels]);
+  }, [webcamRef, dispatch, modelInfo, labels]);
 
   return (
     <>

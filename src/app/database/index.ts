@@ -64,14 +64,20 @@ export async function addImageToDataset(
   await db.datasets.where('projectID').equals(id).modify((dataset) => {
     for (const l of dataset.labels) {
       if (l.name === label) {
-        l.images.push(image);
+        l.images.push({
+          src: image,
+          createdAt: new Date().getTime(),
+        });
         return;
       }
     }
 
     dataset.labels.push({
       name: label,
-      images: [image],
+      images: [{
+        src: image,
+        createdAt: new Date().getTime(),
+      }],
     });
   });
 }

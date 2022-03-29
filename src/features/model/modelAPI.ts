@@ -86,7 +86,7 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
   const targets: Array<number> = [];
   for (let i = 0; i < labels.length; i++) {
     for (const image of labels[i].images) {
-      const img = await createImage(image);
+      const img = await createImage(image.src);
       const tensor = toTensor(img);
       tensors.push(tensor);
       targets.push(i);
