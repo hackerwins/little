@@ -27,6 +27,11 @@ export function Gallery({label}: {label?: string}) {
       </div>
       <section>
         {
+          !filteredLabels.length && (
+            <span className="text-xl text-center aline-middle">To start training your model,<br />import and label some images.</span>
+          )
+        }
+        {
           filteredLabels.map((label, idx) => 
             <div key={idx} className="container mx-auto">
               <div className="flex mt-4 bg-white">

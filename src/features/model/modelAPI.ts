@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import {categoricalCrossentropy} from '@tensorflow/tfjs-layers/dist/exports_metrics';
 
-import { Dataset, filterLabels } from '../../app/database';
+import { Dataset, ImagePrediction, filterLabels } from '../../app/database';
 
 // createImage creates a HTMLImageElement from a given base64 string.
 function createImage(encodedImage: string): Promise<HTMLImageElement> {
@@ -13,37 +13,70 @@ function createImage(encodedImage: string): Promise<HTMLImageElement> {
   });
 }
 
+const imageSize = 224;
+
 // toTensor converts a given image to a tensor.
 function toTensor(imageElement: HTMLImageElement): tf.Tensor {
   return tf.tidy(() => {
     const image = tf.browser.fromPixels(imageElement);
-    const resized = tf.image.resizeNearestNeighbor(image, [224, 224]);
 
-    // Normalize the image between -1 and 1. The image comes in between 0-255,
-    // so we divide by 127 and subtract 1.
-    return resized.toFloat().div(tf.scalar(127)).sub(tf.scalar(1));
+    const inputMin = 0;
+    const inputMax = 1;
+    const normalizationConstant = (inputMax - inputMin) / 255.0;
+
+    const normalized: tf.Tensor3D = tf.add(
+      tf.mul(tf.cast(image, 'float32'), normalizationConstant),
+      inputMin,
+    );
+    return tf.image.resizeBilinear(normalized, [imageSize, imageSize], true);
   });
+}
+
+// predictOnBatch predicts the class of the given images.
+export async function predictOnBatch(
+  encodedImages: Array<string>,
+  model: tf.LayersModel,
+): Promise<Array<ImagePrediction>> {
+  const imageElements = await Promise.all(encodedImages.map(createImage));
+  const logits = tf.tidy(() => {
+    const tensors = imageElements.map(toTensor);
+    const x = tf.stack(tensors);
+    const yhat = model.predictOnBatch(x) as tf.Tensor<tf.Rank>;
+    const logits = yhat.arraySync() as Array<ImagePrediction>;
+    return logits;
+  });
+
+  console.log('predictOnBatch:', tf.memory());
+  return logits;
 }
 
 // predict predicts the class of a given image.
 export async function predict(
   encodedImage: string,
   model: tf.LayersModel,
-): Promise<Array<number>> {
+): Promise<ImagePrediction> {
   const img = await createImage(encodedImage);
-  return tf.tidy(() => {
+  const logit = tf.tidy(() => {
     const tensor = toTensor(img);
-    const x = tensor.expandDims();
-    const yhat = model.predictOnBatch(x) as tf.Tensor<tf.Rank>;
-    const results = yhat.arraySync() as Array<Array<number>>;
-    return results[0];
+    const batched = tf.reshape(tensor, [-1, imageSize, imageSize, 3]);
+    const yhat = model.predict(batched) as tf.Tensor;
+    const logits = yhat.arraySync() as Array<ImagePrediction>;
+    console.log(logits[0]);
+    return logits[0];
   });
+
+  console.log('predict:', tf.memory());
+  return logit;
 }
 
 // train creates a model and trains it on the given dataset.
-// https://github.com/eisbilen/TFJS-CustomImageClassification
+// The model is fine tuned model using mobileNetv1.
+//   - https://github.com/eisbilen/TFJS-CustomImageClassification
+//   - https://www.youtube.com/watch?v=Zrt76AIbeh4
 export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.History]> {
   const labels = filterLabels(dataset.labels);
+
+  // TODO(hackerwins): Cache base model to avoid downloading it every time.
   const baseModel = await tf.loadLayersModel(
     'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
   );
@@ -52,20 +85,25 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
   // freezes layers to train only the last couple of layers.
   const pooling = baseModel.getLayer('global_average_pooling2d_1');
   const predictions = tf.layers.dense({
+    name: 'dense_modified',
     units: labels.length,
     activation: 'softmax',
-    name: 'denseModified',
   }).apply(pooling.output) as tf.SymbolicTensor | tf.SymbolicTensor[];
 
   const model = tf.model({
+    name: 'model_modified',
     inputs: baseModel.input,
     outputs: predictions,
-    name: 'modelModified',
   });
   
   // freeze mobilenet layers to make them untrainable
   // just keeps final layers trainable with argument trainablelayers
-  const trainableLayers = ['denseModified','conv_pw_13_bn','conv_pw_13','conv_dw_13_bn','conv_dw_13'];
+  const trainableLayers = [
+    'conv_pw_12','conv_dw_12',
+    'conv_pw_13','conv_dw_13',
+    'dense_modified',
+  ];
+
   for (const layer of model.layers) {
     layer.trainable = false;
     for (const trainableLayer of trainableLayers) {
@@ -82,6 +120,9 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
     metrics: ['accuracy', 'crossentropy'],
   });
 
+  model.summary();
+  console.log('trainables:', model.layers.filter(layer => layer.trainable).map(layer => layer.name));
+
   const tensors: Array<tf.Tensor> = [];
   const targets: Array<number> = [];
   for (let i = 0; i < labels.length; i++) {
@@ -92,25 +133,29 @@ export async function train(dataset: Dataset): Promise<[tf.LayersModel, tf.Histo
       targets.push(i);
     }
   }
+  const ys = tf.oneHot(targets, labels.length);
   const xs = tf.stack(tensors);
-  const xy = tf.oneHot(targets, labels.length);
   for (const tensor of tensors) {
     tensor.dispose();
   }
 
-  const info = await model.fit(xs, xy, {
+  const info = await model.fit(xs, ys, {
     epochs: 15,
     validationSplit: 0.2,
     callbacks: {
       onEpochEnd: (epoch: number, logs?: tf.Logs) => {
-        console.log(`Epoch ${epoch}: loss = ${logs?.loss} accuracy = ${logs?.acc}`);
+        const loss = logs?.loss.toFixed(5);
+        const acc = logs?.acc.toFixed(5);
+        const valLoss = logs?.val_loss.toFixed(5);
+        const valAcc = logs?.val_acc.toFixed(5);
+        console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc} val_loss = ${valLoss} val_acc = ${valAcc}`);
       },
     },
   });
 
   xs.dispose();
-  xy.dispose();
-  console.log('after train:', tf.memory());
+  ys.dispose();
+  console.log('train:', tf.memory());
 
   return [model, info];
 }

@@ -8,7 +8,7 @@ import {
   filterLabels,
 } from '../../app/database';
 import { RootState } from '../../app/store';
-import { train, predict, saveModel, loadModel } from './modelAPI';
+import { train, predict, predictOnBatch, saveModel, loadModel } from './modelAPI';
 
 export interface ModelState {
   model: tf.LayersModel | null;
@@ -64,24 +64,22 @@ export const trainModelAsync = createAsyncThunk(
         });
         idx += 1;
       }
-      const labelNames = filterLabels(dataset.labels).map(label => label.name);
+      const labels = filterLabels(dataset.labels);
+      const labelNames = labels.map(label => label.name);
 
       // 03. build prediction.
       const prediction: Prediction = {
         projectID: dataset.projectID!,
         labels: [],
       };
-      for (const label of dataset.labels) {
+      for (const label of labels) {
         const labelPrediction: LabelPrediction = {
           label: label.name,
           images: [],
         };
-        for (const image of label.images) {
-          const result = await predict(image.src, model);
-          labelPrediction.images.push({
-            scores: result,
-          });
-        }
+        const images = label.images.map(image => image.src);
+        const predictions = await predictOnBatch(images, model)
+        labelPrediction.images = predictions;
         prediction.labels.push(labelPrediction);
       }
 

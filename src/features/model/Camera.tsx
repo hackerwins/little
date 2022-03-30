@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Webcam from 'react-webcam';
 
-import { filterLabels } from '../../app/database';
+import { filterLabels, getMaxLabel, ImagePrediction } from '../../app/database';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { LabelInput } from '../../common/label/LabelInput';
 import { selectDataset } from '../dataset/datasetSlice';
@@ -27,20 +27,8 @@ export function Camera() {
       const image = webcamRef.current!.getScreenshot()!;
       if (image) {
         const result = await dispatch(predictAsync(image));
-        const scores = result.payload as Array<number>;
-
-        const prediction = new Map<string, number>();
-        let maxKey = '';
-        let maxScore = 0;
-        scores.forEach((score: number, idx: number) => {
-          if (score > maxScore) {
-            maxScore = score;
-            maxKey = labels[idx].name;
-          }
-          prediction.set(labels[idx].name, score);
-        });
-        console.log(prediction);
-        setLabel(maxKey);
+        const scores = result.payload as ImagePrediction;
+        setLabel(getMaxLabel(scores, labels));
       }
       timer = setTimeout(predict, 1000);
     };
@@ -53,6 +41,7 @@ export function Camera() {
     };
   }, [webcamRef, dispatch, modelInfo, labels]);
 
+  // TODO(hackerwins): Add a button to clear the label.
   return (
     <>
       <div className="flex w-full h-12">

@@ -22,15 +22,16 @@ export type Dataset = {
   labels: Array<Label>;
 };
 
-export type ImagePrediction = {
-  scores: Array<number>;
-}
+// ImagePrediction contains scores for each label for a single image.
+export type ImagePrediction = Array<number>;
 
+// LabelPrediction has predictions of images in the given label.
 export type LabelPrediction = {
   label: string;
   images: Array<ImagePrediction>;
 };
 
+// Prediction is a collection of label predictions.
 export type Prediction = {
   projectID: number;
   labels: Array<LabelPrediction>;
@@ -39,6 +40,20 @@ export type Prediction = {
 // filterLabels returns a label array without unlabeled label.
 export function filterLabels(labels: Array<Label>): Array<Label> {
   return labels.filter(label => label.name !== 'Unlabeled');
+}
+
+// getLabel returns a label by name.
+export function getMaxLabel(scores: ImagePrediction, labels: Array<Label>): string {
+  const filteredLabels = filterLabels(labels);
+  let maxLabel = '';
+  let maxScore = 0;
+  scores.forEach((score: number, idx: number) => {
+    if (score > maxScore) {
+      maxScore = score;
+      maxLabel = filteredLabels[idx].name;
+    }
+  });
+  return maxLabel;
 }
 
 // TrainingLog is the log of training process.
