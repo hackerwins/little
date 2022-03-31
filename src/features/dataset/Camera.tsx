@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import debounce from 'lodash/debounce';
@@ -16,6 +16,10 @@ export function Camera() {
 
   const webcamRef = useRef<Webcam>(null);
   const [label, setLabel] = useState(query.get('label') || '');
+
+  useEffect(() => {
+    setLabel(query.get('label') || '');
+  }, [query]);
 
   const debounceTrain = useCallback(debounce(async () => {
     await dispatch(trainModelAsync(1));

@@ -21,8 +21,9 @@ function App() {
           <Routes>
             <Route path="/labels" element={<LabelPage />} />
             <Route path="/labels/:label" element={<LabelPage />} />
-            <Route path="/labels/camera" element={<CameraPage />} />
+            <Route path="/imports/camera" element={<CameraPage />} />
             <Route path="/training" element={<TrainPage />} />
+            <Route path="/training/:label" element={<TrainPage />} />
             <Route path="/use" element={<UsePage />} />
             <Route path="/" element={<Navigate to="/labels" />} />
           </Routes>

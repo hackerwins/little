@@ -7,12 +7,14 @@ import { selectModelInfo } from '../model/modelSlice';
 import { LabelInput } from '../../common/label/LabelInput';
 
 // Gallery component displays a list of images of a dataset.
-export function Gallery() {
+export function Gallery({label}: {label?: string}) {
   const dataset = useAppSelector(selectDataset);
   const modelInfo = useAppSelector(selectModelInfo);
 
   const labels = dataset?.labels || [];
-  const filteredLabels = labels.filter(l => l.images.length);
+  const title = label ? `${label}` : 'All Images';
+  const selectedLabels = label ? labels.filter(l => l.name === label) : labels;
+  const filteredLabels = selectedLabels.filter(l => l.images.length);
   const labelPredictions = modelInfo?.prediction.labels || [];
 
   const labelPredictionMap = new Map<string, LabelPrediction>();
@@ -24,7 +26,7 @@ export function Gallery() {
     <>
       <div className="flex w-full h-12">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">All Images</h1>
+          <h1 className="text-2xl font-bold">{title}</h1>
         </div>
       </div>
       <section>
