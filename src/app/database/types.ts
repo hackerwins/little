@@ -43,7 +43,7 @@ export function filterLabels(labels: Array<Label>): Array<Label> {
 }
 
 // getLabel returns a label by name.
-export function getMaxLabel(scores: ImagePrediction, labels: Array<Label>): string {
+export function getMaxLabel(scores: ImagePrediction, labels: Array<Label>): [string, number] {
   const filteredLabels = filterLabels(labels);
   let maxLabel = '';
   let maxScore = 0;
@@ -53,7 +53,7 @@ export function getMaxLabel(scores: ImagePrediction, labels: Array<Label>): stri
       maxLabel = filteredLabels[idx].name;
     }
   });
-  return maxLabel;
+  return [maxLabel, maxScore];
 }
 
 // TrainingLog is the log of training process.

@@ -12,12 +12,13 @@ export function Camera() {
   const dataset = useAppSelector(selectDataset);
   const modelInfo = useAppSelector(selectModelInfo);
   const dispatch = useAppDispatch();
-  const labels = filterLabels(dataset?.labels || []);
 
   const webcamRef = useRef<Webcam>(null);
   const [label, setLabel] = useState('');
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
+    const labels = filterLabels(dataset?.labels || []);
     if (!webcamRef.current || !modelInfo || !labels.length) {
       return;
     }
@@ -28,8 +29,11 @@ export function Camera() {
       if (image) {
         const result = await dispatch(predictAsync(image));
         const scores = result.payload as ImagePrediction;
-        setLabel(getMaxLabel(scores, labels));
+        const [maxLabel, maxScore] = getMaxLabel(scores, labels);
+        setLabel(maxLabel);
+        setScore(maxScore);
       }
+
       timer = setTimeout(predict, 1000);
     };
     predict();
@@ -39,7 +43,7 @@ export function Camera() {
         clearTimeout(timer);
       }
     };
-  }, [webcamRef, dispatch, modelInfo, labels]);
+  }, [webcamRef, dispatch, modelInfo, dataset]);
 
   // TODO(hackerwins): Add a button to clear the label.
   return (
@@ -51,7 +55,7 @@ export function Camera() {
       </div>
       <div className="relative w-full place-content-center mt-5">
         <Webcam ref={webcamRef} className="w-full h-auto rounded-md" mirrored/>
-        <LabelInput value={label} setValue={setLabel} />
+        <LabelInput value={label} score={score} setValue={setLabel} />
       </div>
     </>
   );

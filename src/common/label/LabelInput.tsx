@@ -8,10 +8,11 @@ const DefaultValue = 'Label';
 // LabelInput component displays a label and an input field to set the value of a label.
 export function LabelInput(props: {
   value: string;
+  score?: number;
   prediction?: string;
   setValue: (value: string) => void;
 }) {
-  const {prediction, value, setValue} = props;
+  const {score, prediction, value, setValue} = props;
   const [showInput, setShowInput] = useState(false);
   const correct = prediction === value;
 
@@ -43,31 +44,34 @@ export function LabelInput(props: {
   const bgColor = prediction ? (showInput || correct) ? 'backdrop-blur-sm bg-green-500/30' : 'bg-red-500' : 'backdrop-blur-sm bg-white/30';
 
   return (
-    <div className={`absolute bottom-3 left-3 h-10 rounded p-2 text-md text-white ${bgColor}`}>
-      {
-        prediction && !showInput && (
-          <span className="text-md" onClick={handleClick}>
-            {prediction} &nbsp; {correct ? <CorrectIcon /> : <IncorrectIcon />}
-          </span>
-        )
-      }
-      {
-        (!prediction || showInput) && <span className="text-md" onClick={handleClick}>{value || DefaultValue}</span>
-      }
-      {
-        showInput && (
-          <input
-            type="text"
-            className="absolute left-2 w-full outline-none bg-transparent"
-            placeholder={DefaultValue}
-            value={value}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            autoFocus
-          />
-        )
-      }
+    <div className={`absolute bottom-3 left-3 h-10 rounded text-md text-white ${bgColor}`}>
+      <div className="absolute bg-green-600 h-10 rounded" style={{width: (score || 0) * 100 + '%', zIndex: -1}} />
+      <div className="p-2">
+        {
+          prediction && !showInput && (
+            <span className="text-md" onClick={handleClick}>
+              {prediction} &nbsp; {correct ? <CorrectIcon /> : <IncorrectIcon />}
+            </span>
+          )
+        }
+        {
+          (!prediction || showInput) && <span className="text-md" onClick={handleClick}>{value || DefaultValue}</span>
+        }
+        {
+          showInput && (
+            <input
+              type="text"
+              className="absolute left-2 w-full outline-none bg-transparent"
+              placeholder={DefaultValue}
+              value={value}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            />
+          )
+        }
+      </div>
     </div>
   );
 }

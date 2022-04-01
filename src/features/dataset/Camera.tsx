@@ -23,7 +23,7 @@ export function Camera() {
 
   const debounceTrain = useCallback(debounce(async () => {
     await dispatch(trainModelAsync(1));
-  }, 5000), [dispatch]);
+  }, 3000), [dispatch]);
 
   // TODO(hackerwins): Add sound effects for when taking a photo.
   const takePhoto = useCallback(async () => {

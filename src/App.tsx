@@ -17,7 +17,7 @@ function App() {
         <aside className="fixed top-0 h-screen flex-none w-64 bg-gray-50 dark:bg-gray-800" aria-label="Sidebar">
           <Sidebar />
         </aside>
-        <main className="ml-64 grow overflow-y">
+        <main className="ml-64 grow overflow-y-scroll">
           <Routes>
             <Route path="/labels" element={<LabelPage />} />
             <Route path="/labels/:label" element={<LabelPage />} />

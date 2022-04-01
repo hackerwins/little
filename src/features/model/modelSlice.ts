@@ -2,13 +2,13 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import * as tf from '@tensorflow/tfjs';
 
 import {
-  Dataset, TrainingLog, Prediction, LabelPrediction,
+  Dataset,
   Model as ModelInfo,
   findDataset, findModel, putModel,
   filterLabels,
 } from '../../app/database';
 import { RootState } from '../../app/store';
-import { train, predict, predictOnBatch, saveModel, loadModel } from './modelAPI';
+import { train, predict, saveModel, loadModel } from './modelAPI';
 
 export interface ModelState {
   model: tf.LayersModel | null;
@@ -50,38 +50,10 @@ export const trainModelAsync = createAsyncThunk(
       }
 
       // 01. train model and save it to the database.
-      const [model, info] = await train(dataset);
+      const [model, history, prediction] = await train(dataset);
       const indexedDBKey = await saveModel(projectID, model, dataset);
-
-      // 02. convert tf.info to history.
-      const history: Array<TrainingLog> = [];
-      let idx = 0;
-      for (const a of info.history.acc) {
-        history.push({
-          epoch: idx,
-          accuracy: a as number,
-          loss: info.history.loss[idx] as number,
-        });
-        idx += 1;
-      }
       const labels = filterLabels(dataset.labels);
       const labelNames = labels.map(label => label.name);
-
-      // 03. build prediction.
-      const prediction: Prediction = {
-        projectID: dataset.projectID!,
-        labels: [],
-      };
-      for (const label of labels) {
-        const labelPrediction: LabelPrediction = {
-          label: label.name,
-          images: [],
-        };
-        const images = label.images.map(image => image.src);
-        const predictions = await predictOnBatch(images, model)
-        labelPrediction.images = predictions;
-        prediction.labels.push(labelPrediction);
-      }
 
       const modelInfo = {
         projectID: dataset.projectID!,
