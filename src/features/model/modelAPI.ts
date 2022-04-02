@@ -7,7 +7,7 @@ import {
   ImagePrediction,
 } from '../../app/database';
 
-import { predictAsync, trainAsync } from '../../app/model/finetuned-mobilenet';
+import { predictAsync, trainAsync } from '../../app/model/cnn';
 
 // predict predicts the class of a given image.
 export async function predict(

@@ -7,40 +7,10 @@ import {
   ImagePrediction,
   filterLabels,
 } from '../database';
+import { createImage, toTensor, toHistory, toPrediction } from './utils';
 
 const imageSize = 224;
-const inputMin = 0;
-const inputMax = 1;
-
-// Values read from images are in the range [0.0, 255.0], but they must
-// be normalized to [min, max] before passing to the mobilenet classifier.
-// Different implementations of mobilenet have different values of [min, max].
-// We store the appropriate normalization parameters using these two scalars
-// such that:
-// out = (in / 255.0) * (inputMax - inputMin) + inputMin;
-const normalizationConstant = (inputMax - inputMin) / 255.0;
-
-// createImage creates a HTMLImageElement from a given base64 string.
-function createImage(encodedImage: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = (err) => reject(err);
-    image.src = encodedImage;
-  });
-}
-
-// toTensor converts a given image to a tensor.
-function toTensor(imageElement: HTMLImageElement): tf.Tensor {
-  return tf.tidy(() => {
-    const image = tf.browser.fromPixels(imageElement);
-
-    const resized = tf.image.resizeBilinear(image, [imageSize, imageSize], true);
-
-    // Normalize the image from [0, 255] to [inputMin, inputMax].
-    return tf.add(tf.mul(tf.cast(resized, 'float32'), normalizationConstant), inputMin);
-  });
-}
+const numChannels = 3;
 
 // predict predicts the class of a given image.
 export async function predictAsync(
@@ -49,13 +19,12 @@ export async function predictAsync(
 ): Promise<ImagePrediction> {
   const img = await createImage(encodedImage);
   const logit = tf.tidy(() => {
-    const tensor = toTensor(img);
+    const tensor = toTensor(img, imageSize, numChannels);
     const batched = tf.expandDims(tensor, 0);
     const yhat = model.predict(batched) as tf.Tensor;
     const logits = yhat.arraySync() as Array<ImagePrediction>;
     return logits[0];
   });
-  // console.log('predict', logit);
   return logit;
 }
 
@@ -121,7 +90,7 @@ export async function trainAsync(
   for (let i = 0; i < labels.length; i++) {
     for (const image of labels[i].images) {
       const img = await createImage(image.src);
-      const tensor = toTensor(img);
+      const tensor = toTensor(img, imageSize, numChannels);
       tensors.push(tensor);
       targets.push(i);
     }
@@ -137,6 +106,7 @@ export async function trainAsync(
   const info = await model.fit(xs, ys, {
     epochs: 15,
     validationSplit: 0.2,
+    shuffle: true,
     callbacks: [tf.callbacks.earlyStopping({
       monitor: 'acc', patience: 5,
     }), new tf.CustomCallback({
@@ -145,53 +115,40 @@ export async function trainAsync(
         const acc = logs?.acc.toFixed(5);
         const valLoss = logs?.val_loss.toFixed(5);
         const valAcc = logs?.val_acc.toFixed(5);
+        // console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc}`);
         console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc} val_loss = ${valLoss} val_acc = ${valAcc}`);
       }
     })],
   });
 
   // 03. predict the given dataset.
+  // TODO(hackerwins): find the reason why the prediction is not same with the
+  // batch prediction in mobilenet.
   const yhats = model.predict(xs) as tf.Tensor;
   const preds = yhats.arraySync() as Array<ImagePrediction>;
 
-  // for (let i = 0; i < labels.length; i++) {
-  //   for (const image of labels[i].images) {
-  //     await predictAsync(image.src, model);
-  //   }
-  // }
+  // const preds2: Array<ImagePrediction> = [];
+  // tf.unstack(xs).forEach((tensor, i) => {
+  //   const pred = tf.tidy(() => {
+  //     const pred = model.predict(tensor.expandDims(0)) as tf.Tensor;
+  //     const logits = pred.arraySync() as Array<ImagePrediction>;
+  //     return logits[0];
+  //   });
+  //   preds2.push(pred);
+  // });
+  // preds.forEach((pred, i) => {
+  //   console.log(pred, preds2[i]);
+  // });
 
   xs.dispose();
   ys.dispose();
   yhats.dispose();
 
   console.log('train:', tf.memory());
-
-  // create history.
-  const history: Array<TrainingLog> = [];
-  let idx = 0;
-  for (const acc of info.history.acc) {
-    history.push({
-      epoch: idx,
-      accuracy: acc as number,
-      loss: info.history.loss[idx] as number,
-    });
-    idx += 1;
-  }
-
-  // create prediction.
-  const prediction: Prediction = {
-    projectID: dataset.projectID!,
-    labels: [],
-  };
-
-  for (const label of labels) {
-    prediction.labels.push({
-      label: label.name,
-      images: preds.splice(0, label.images.length),
-    });
-  }
-
-  return [model, history, prediction];
+  return [
+    model,
+    toHistory(info),
+    toPrediction(dataset, preds),
+  ];
 }
-
 
