@@ -1,5 +1,4 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import * as tf from '@tensorflow/tfjs';
 
 import {
   Dataset,
@@ -8,10 +7,10 @@ import {
   filterLabels,
 } from '../../app/database';
 import { RootState } from '../../app/store';
-import { train, predict, saveModel, loadModel } from './modelAPI';
+import { createTransferMobileNet, loadTransferMobileNet, Model } from '../../app/model';
 
 export interface ModelState {
-  model: tf.LayersModel | null;
+  model: Model | null;
   modelInfo: ModelInfo | null;
   status: 'idle' | 'loading' | 'failed';
 }
@@ -38,6 +37,14 @@ function isTrainable(dataset: Dataset) {
   return true;
 }
 
+
+// loadModel loads a model of the given project from the database.
+async function loadModel(
+  projectID: number,
+): Promise<Model> {
+  return await loadTransferMobileNet(projectID);
+}
+
 // trainModelAsync creates a new model and trains it.
 export const trainModelAsync = createAsyncThunk(
   'model/train',
@@ -49,9 +56,11 @@ export const trainModelAsync = createAsyncThunk(
         throw new Error('Dataset is not trainable');
       }
 
+      const model = await createTransferMobileNet();
+
       // 01. train model and save it to the database.
-      const [model, history, prediction] = await train(dataset);
-      const indexedDBKey = await saveModel(projectID, model, dataset);
+      const [history, prediction] = await model.train(dataset);
+      const indexedDBKey = await model.save(projectID);
       const labels = filterLabels(dataset.labels);
       const labelNames = labels.map(label => label.name);
 
@@ -88,7 +97,7 @@ export const predictAsync = createAsyncThunk(
   async (image: string, {getState}) => {
     const state = getState() as RootState ;
     const model = state.model.model!;
-    return await predict(image, model);
+    return await model.predict(image);
   },
 );
 
