@@ -7,7 +7,7 @@ import {
   filterLabels,
 } from '../../app/database';
 import { RootState } from '../../app/store';
-import { createTransferMobileNet, loadTransferMobileNet, Model } from '../../app/model';
+import { createCustomMobileNet, loadCustomMobileNet, Model } from '../../app/model';
 
 export interface ModelState {
   model: Model | null;
@@ -42,7 +42,7 @@ function isTrainable(dataset: Dataset) {
 async function loadModel(
   projectID: number,
 ): Promise<Model> {
-  return await loadTransferMobileNet(projectID);
+  return await loadCustomMobileNet(projectID);
 }
 
 // trainModelAsync creates a new model and trains it.
@@ -56,7 +56,7 @@ export const trainModelAsync = createAsyncThunk(
         throw new Error('Dataset is not trainable');
       }
 
-      const model = await createTransferMobileNet();
+      const model = await createCustomMobileNet();
 
       // 01. train model and save it to the database.
       const [history, prediction] = await model.train(dataset);

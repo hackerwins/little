@@ -12,49 +12,42 @@ import { createImage, toTensor, toHistory, toPrediction } from './utils';
 const imageSize = 224;
 const numChannels = 3;
 
-// createTransferMobileNet creates a transfer model from a mobilenet model.
-export async function createTransferMobileNet(): Promise<TransferMobileNet> {
-  const mobilenet = await tf.loadLayersModel(
-    'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
-  );
-
-  const cutoffLayer = mobilenet.getLayer('conv_pw_13_relu');
-  const truncatedModel = tf.model({
-    inputs: mobilenet.inputs,
-    outputs: cutoffLayer.output,
-  });
-
-  return new TransferMobileNet(truncatedModel);
+// createCustomMobileNet creates a new CustomMobileNet.
+export async function createCustomMobileNet(): Promise<CustomMobileNet> {
+  const mobileNet = new CustomMobileNet();
+  await mobileNet.initialize();
+  return mobileNet;
 }
 
-// loadTransferMobileNet loads a transfer model.
-export async function loadTransferMobileNet(projectID: number): Promise<TransferMobileNet> {
-  const mobilenet = await tf.loadLayersModel(
-    'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
-  );
-
-  const cutoffLayer = mobilenet.getLayer('conv_pw_13_relu');
-  const truncatedModel = tf.model({
-    inputs: mobilenet.inputs,
-    outputs: cutoffLayer.output,
-  });
-
+// loadCustomMobileNet loads a CustomMobileNet.
+export async function loadCustomMobileNet(projectID: number): Promise<CustomMobileNet> {
   const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
   const model = await tf.loadLayersModel(indexedDBKey);
-  const mobilenetTransfer = new TransferMobileNet(truncatedModel, model);
-  return mobilenetTransfer;
+  const mobileNet = new CustomMobileNet(model);
+  await mobileNet.initialize();
+  return mobileNet;
 }
 
-export class TransferMobileNet {
-  private truncatedModel: tf.LayersModel;
-  private model?: tf.LayersModel;
+export class CustomMobileNet {
+  private truncatedModel?: tf.LayersModel;
+  private trainingModel?: tf.LayersModel;
 
   constructor(
-    truncatedModel: tf.LayersModel,
-    model?: tf.LayersModel,
+    trainingModel?: tf.LayersModel,
   ) {
-    this.truncatedModel = truncatedModel;
-    this.model = model;
+    this.trainingModel = trainingModel;
+  }
+
+  public async initialize(): Promise<void> {
+    const mobilenet = await tf.loadLayersModel(
+      'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json'
+    );
+
+    const cutoffLayer = mobilenet.getLayer('conv_pw_13_relu');
+    this.truncatedModel = tf.model({
+      inputs: mobilenet.inputs,
+      outputs: cutoffLayer.output,
+    });
   }
 
   // train creates a model and trains it on the given dataset.
@@ -82,7 +75,7 @@ export class TransferMobileNet {
     // 02. create model and train it.
     const model = await this.buildModel(labels.length);
 
-    const activation = this.truncatedModel.predict(xs) as tf.Tensor;
+    const activation = this.truncatedModel!.predict(xs) as tf.Tensor;
     const info = await model.fit(activation, ys, {
       epochs: 50,
       validationSplit: 0.2,
@@ -108,7 +101,7 @@ export class TransferMobileNet {
     ys.dispose();
     yhats.dispose();
 
-    this.model = model;
+    this.trainingModel = model;
 
     console.log('train:', tf.memory());
     return [
@@ -119,13 +112,13 @@ export class TransferMobileNet {
 
   public async save(projectID: number): Promise<string> {
     const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
-    await this.model!.save(indexedDBKey);
+    await this.trainingModel!.save(indexedDBKey);
     return indexedDBKey;
   }
 
   // dispose disposes the model and its tensors.
   public dispose(): void {
-    this.model!.dispose();
+    this.trainingModel!.dispose();
   }
 
   // predict predicts the class of a given image.
@@ -134,8 +127,8 @@ export class TransferMobileNet {
     const logit = tf.tidy(() => {
       const tensor = toTensor(img, imageSize, numChannels);
       const batched = tf.expandDims(tensor, 0);
-      const activation = this.truncatedModel.predict(batched);
-      const yhat = this.model!.predict(activation) as tf.Tensor;
+      const activation = this.truncatedModel!.predict(batched);
+      const yhat = this.trainingModel!.predict(activation) as tf.Tensor;
       const logits = yhat.arraySync() as Array<ImagePrediction>;
       return logits[0];
     });
@@ -146,7 +139,7 @@ export class TransferMobileNet {
     const model = tf.sequential();
 
     model.add(tf.layers.flatten({
-      inputShape: this.truncatedModel.outputs[0].shape.slice(1),
+      inputShape: this.truncatedModel!.outputs[0].shape.slice(1),
     }));
 
     model.add(tf.layers.dense({

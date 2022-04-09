@@ -19,24 +19,12 @@ export function createImage(encodedImage: string): Promise<HTMLImageElement> {
 }
 
 // toTensor converts a given image to a tensor.
-// function toTensor(imageElement: HTMLImageElement): tf.Tensor {
-//   return tf.tidy(() => {
-//     const image = tf.browser.fromPixels(imageElement);
-// 
-//     const resized = tf.image.resizeBilinear(image, [imageSize, imageSize], true);
-// 
-//     // Normalize the image from [0, 255] to [inputMin, inputMax].
-//     return tf.add(tf.mul(tf.cast(resized, 'float32'), normalizationConstant), inputMin);
-//   });
-// }
-
-// toTensor converts a given image to a tensor.
 export function toTensor(
   imageElement: HTMLImageElement,
   imageSize: number,
   numChannels: number,
 ): tf.Tensor {
-  const inputMin = -1;
+  const inputMin = 0;
   const inputMax = 1;
 
   // Values read from images are in the range [0.0, 255.0], but they must
