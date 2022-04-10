@@ -23,9 +23,9 @@ export function Camera() {
       return;
     }
 
-    let timer: ReturnType<typeof setTimeout>;
+    let requestID: ReturnType<typeof requestAnimationFrame>;
     const predict = async () => {
-      const image = webcamRef.current!.getScreenshot()!;
+      const image = webcamRef.current?.getScreenshot()!;
       if (image) {
         const result = await dispatch(predictAsync(image));
         const scores = result.payload as ImagePrediction;
@@ -34,13 +34,13 @@ export function Camera() {
         setScore(maxScore);
       }
 
-      timer = setTimeout(predict, 1000);
+      requestID = window.requestAnimationFrame(predict);
     };
     predict();
 
     return () => {
-      if (timer) {
-        clearTimeout(timer);
+      if (requestID) {
+        cancelAnimationFrame(requestID);
       }
     };
   }, [webcamRef, dispatch, modelInfo, dataset]);
@@ -53,8 +53,8 @@ export function Camera() {
           <h1 className="text-2xl font-bold">Use</h1>
         </div>
       </div>
-      <div className="relative w-full place-content-center mt-5">
-        <Webcam ref={webcamRef} className="w-full h-auto rounded-md" mirrored/>
+      <div className="relative w-full max-h-[calc(100vh-8rem)] mt-5 flex items-center justify-center overflow-hidden">
+        <Webcam ref={webcamRef} className="w-full rounded-md" mirrored/>
         <LabelInput value={label} score={score} setValue={setLabel} />
       </div>
     </>

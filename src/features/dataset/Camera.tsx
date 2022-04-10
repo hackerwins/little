@@ -50,7 +50,7 @@ export function Camera() {
         </Link>
       </div>
 
-      <div className="relative w-full place-content-center mt-5">
+      <div className="relative w-full max-h-[calc(100vh-8rem)] mt-5 flex items-center justify-center overflow-hidden">
         <Webcam className="w-full h-auto rounded-md" mirrored ref={webcamRef} />
         <LabelInput value={label} setValue={setLabel} />
         <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-12 h-12 flex backdrop-blur-sm bg-gray/30 border-2 border-white rounded-full">
