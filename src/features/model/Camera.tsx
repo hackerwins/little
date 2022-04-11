@@ -53,10 +53,21 @@ export function Camera() {
           <h1 className="text-2xl font-bold">Use</h1>
         </div>
       </div>
-      <div className="relative w-full max-h-[calc(100vh-8rem)] mt-5 flex items-center justify-center overflow-hidden">
-        <Webcam ref={webcamRef} className="w-full rounded-md" mirrored/>
-        <LabelInput value={label} score={score} setValue={setLabel} />
-      </div>
+      <section>
+        {
+          !modelInfo && (
+            <span className="text-xl text-center aline-middle">After your model has trained,<br />play with it using new images.</span>
+          )
+        }
+        {
+          modelInfo && (
+            <div className="relative w-full max-h-[calc(100vh-8rem)] mt-5 flex items-center justify-center overflow-hidden">
+              <Webcam ref={webcamRef} className="w-full rounded-md" mirrored/>
+              <LabelInput value={label} score={score} setValue={setLabel} />
+            </div>
+          )
+        }
+      </section>
     </>
   );
 }

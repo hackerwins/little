@@ -118,7 +118,8 @@ export class CustomMobileNet {
 
   // dispose disposes the model and its tensors.
   public dispose(): void {
-    this.trainingModel!.dispose();
+    this.truncatedModel?.dispose();
+    this.trainingModel?.dispose();
   }
 
   // predict predicts the class of a given image.

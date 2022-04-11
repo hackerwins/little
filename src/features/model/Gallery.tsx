@@ -48,11 +48,15 @@ export function Gallery({label}: {label?: string}) {
                       <li key={index} className="flex flex-wrap w-1/3">
                         <div className="relative w-full p-1 md:p-2">
                           <img alt="gallery" className="object-cover object-center w-full h-full rounded-lg" src={image.src} />
-                          <LabelInput
-                            prediction={getMaxLabel(labelPredictionMap.get(label.name)!.images[index], labels)[0]}
-                            value={label.name}
-                            setValue={(label: string) => console.log(label)}
-                          />
+                          {
+                            labelPredictionMap.get(label.name)!.images[index] && (
+                              <LabelInput
+                                prediction={getMaxLabel(labelPredictionMap.get(label.name)!.images[index], labels)[0]}
+                                value={label.name}
+                                setValue={(label: string) => console.log(label)}
+                              />
+                            )
+                          }
                         </div>
                       </li>
                     ))
