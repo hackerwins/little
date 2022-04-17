@@ -14,8 +14,8 @@ const imageSize = 112;
 const numChannels = 3;
 
 // createCNN creates a new CNN model.
-export function createCNN(units: number): CNN {
-  return new CNN(units);
+export function createCNN(): CNN {
+  return new CNN();
 }
 
 // loadCNN loads a CNN model from the database.
@@ -27,19 +27,16 @@ export async function loadCNN(projectID: number): Promise<CNN> {
 
 // CNN is a convolutional neural network model for image classification.
 export class CNN implements Model {
-  private model: tf.LayersModel;
+  private model?: tf.LayersModel;
 
-  constructor(modelOrUnits: tf.LayersModel | number) {
-    if (modelOrUnits instanceof tf.LayersModel) {
-      this.model = modelOrUnits;
-    } else {
-      this.model = this.buildModel(modelOrUnits);
-    }
+  constructor(model?: tf.LayersModel) {
+    this.model = model;
   }
 
   // train creates a model and trains it on the given dataset.
   public async train(dataset: Dataset): Promise<[Array<TrainingLog>, Prediction]> {
     const labels = filterLabels(dataset.labels);
+    this.model = this.buildModel(labels.length);
   
     // TODO(hackerwins): introduce dataset
     // 01. create xs, ys from the given dataset.
@@ -62,7 +59,7 @@ export class CNN implements Model {
     // 02. create model and train it.
     const info = await this.model.fit(xs, ys, {
       epochs: 15,
-      // validationSplit: 0.2,
+      validationSplit: 0.2,
       shuffle: true,
       callbacks: [tf.callbacks.earlyStopping({
         monitor: 'acc', patience: 5,
@@ -70,10 +67,10 @@ export class CNN implements Model {
         onEpochEnd: (epoch: number, logs?: tf.Logs) => {
           const loss = logs?.loss.toFixed(5);
           const acc = logs?.acc.toFixed(5);
-          // const valLoss = logs?.val_loss.toFixed(5);
-          // const valAcc = logs?.val_acc.toFixed(5);
-          console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc}`);
-          // console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc} val_loss = ${valLoss} val_acc = ${valAcc}`);
+          const valLoss = logs?.val_loss.toFixed(5);
+          const valAcc = logs?.val_acc.toFixed(5);
+          // console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc}`);
+          console.log(`Epoch ${epoch}: loss = ${loss} acc = ${acc} val_loss = ${valLoss} val_acc = ${valAcc}`);
         }
       })],
     });
@@ -99,7 +96,7 @@ export class CNN implements Model {
     const logit = tf.tidy(() => {
       const tensor = toTensor(img, imageSize, numChannels);
       const batched = tf.expandDims(tensor, 0);
-      const yhat = this.model.predict(batched) as tf.Tensor;
+      const yhat = this.model!.predict(batched) as tf.Tensor;
       const logits = yhat.arraySync() as Array<ImagePrediction>;
       return logits[0];
     });
@@ -109,13 +106,13 @@ export class CNN implements Model {
   // save saves the model with the given projectID.
   public async save(projectID: number): Promise<string> {
     const indexedDBKey = `indexeddb://maltiese-models-${projectID}`;
-    await this.model.save(indexedDBKey);
+    await this.model!.save(indexedDBKey);
     return indexedDBKey;
   }
 
   // dispose disposes the model and its tensors.
   public dispose(): void {
-    this.model.dispose();
+    this.model?.dispose();
   }
 
   private buildModel(units: number): tf.Sequential {
